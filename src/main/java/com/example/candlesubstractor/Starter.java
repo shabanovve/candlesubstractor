@@ -1,11 +1,16 @@
 package com.example.candlesubstractor;
 
 import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.io.FileReader;
+import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -15,16 +20,31 @@ import static java.util.stream.Collectors.toList;
 public class Starter implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
+        List<LocalDateTime> dates;
         try (CSVReader reader = new CSVReader(new FileReader(args[0]))) {
             String[] headers = reader.readNext();
             int dateColumnIndex = getColumnIndex(headers, "<DATE>");
-            System.out.println(dateColumnIndex);
-            List<LocalDate> dates = reader.readAll().stream()
-                    .map(columns -> columns[dateColumnIndex])
-                    .map(dateString -> LocalDate.parse(dateString, DateTimeFormatter.ofPattern("yyyyMMdd")))
-                    .collect(toList());
-            System.out.println(dates);
+            int timeColumnIndex = getColumnIndex(headers, "<TIME>");
+            dates = readLocalDateTimes(reader, dateColumnIndex, timeColumnIndex);
         }
+        System.out.println(dates);
+    }
+
+    private List<LocalDateTime> readLocalDateTimes(CSVReader reader, int dateColumnIndex, int timeColumnIndex) throws IOException, CsvException {
+        return reader.readAll().stream()
+                .map(columns -> new Pair(columns[dateColumnIndex], columns[timeColumnIndex]))
+                .map(pair -> {
+                            LocalDate date = LocalDate.parse(pair.left, DateTimeFormatter.ofPattern("yyyyMMdd"));
+                            long dateMillis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                            long timeMillis = Long.parseLong(pair.right);
+                            Instant commonInstant = Instant.ofEpochMilli(dateMillis + timeMillis);
+                            return LocalDateTime.ofInstant(commonInstant, ZoneId.systemDefault());
+                        }
+                )
+                .collect(toList());
+    }
+
+    private record Pair(String left, String right) {
     }
 
     private int getColumnIndex(String[] headers, String columnName) {
