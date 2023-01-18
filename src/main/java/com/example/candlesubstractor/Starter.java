@@ -20,14 +20,20 @@ import static java.util.stream.Collectors.toList;
 public class Starter implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
+        List<LocalDateTime> first = readDateAndTimeFromFile(args[0]);
+        List<LocalDateTime> second = readDateAndTimeFromFile(args[1]);
+        System.out.println(second);
+    }
+
+    private List<LocalDateTime> readDateAndTimeFromFile(String fileName) throws IOException, CsvException {
         List<LocalDateTime> dates;
-        try (CSVReader reader = new CSVReader(new FileReader(args[0]))) {
+        try (CSVReader reader = new CSVReader(new FileReader(fileName))) {
             String[] headers = reader.readNext();
             int dateColumnIndex = getColumnIndex(headers, "<DATE>");
             int timeColumnIndex = getColumnIndex(headers, "<TIME>");
             dates = readLocalDateTimes(reader, dateColumnIndex, timeColumnIndex);
         }
-        System.out.println(dates);
+        return dates;
     }
 
     private List<LocalDateTime> readLocalDateTimes(CSVReader reader, int dateColumnIndex, int timeColumnIndex) throws IOException, CsvException {
