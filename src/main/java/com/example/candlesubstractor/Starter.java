@@ -12,21 +12,18 @@ public class Starter implements CommandLineRunner {
     public void run(String... args) throws Exception {
         try (CSVReader reader = new CSVReader(new FileReader(args[0]))) {
             String[] headers = reader.readNext();
-            String h = getColumnIndex(headers, "<DATE>");
-            System.out.println(h);
+            System.out.println(getColumnIndex(headers, "<DATE>"));
         }
     }
 
-    private String getColumnIndex(String[] headers, String columnName) {
+    private int getColumnIndex(String[] headers, String columnName) {
         int index = 0;
-        String h = null;
         for (String header : headers) {
             if (header.equals(columnName)) {
-                System.out.println("index = " + index);
-                h = header;
+                return index;
             }
             index++;
         }
-        return h;
+        throw new IllegalStateException("Didn't find column " + columnName);
     }
 }
