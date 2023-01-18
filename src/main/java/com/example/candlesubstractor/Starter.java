@@ -22,7 +22,11 @@ public class Starter implements CommandLineRunner {
     public void run(String... args) throws Exception {
         List<LocalDateTime> first = readDateAndTimeFromFile(args[0]);
         List<LocalDateTime> second = readDateAndTimeFromFile(args[1]);
-        System.out.println(second);
+        List<LocalDateTime> intersection = first.stream()
+                .distinct().filter(second::contains).toList();
+        System.out.println("first list amount = " + first.size());
+        System.out.println("second list amount = " + second.size());
+        System.out.println("Intersection amount = " + intersection.size());
     }
 
     private List<LocalDateTime> readDateAndTimeFromFile(String fileName) throws IOException, CsvException {
