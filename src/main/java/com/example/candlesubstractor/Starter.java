@@ -12,16 +12,16 @@ public class Starter implements CommandLineRunner {
     public void run(String... args) throws Exception {
         try (CSVReader reader = new CSVReader(new FileReader(args[0]))) {
             String[] headers = reader.readNext();
-            String h = getColumnIndex(headers);
+            String h = getColumnIndex(headers, "<DATE>");
             System.out.println(h);
         }
     }
 
-    private String getColumnIndex(String[] headers) {
+    private String getColumnIndex(String[] headers, String columnName) {
         int index = 0;
         String h = null;
         for (String header : headers) {
-            if (header.equals("<DATE>")) {
+            if (header.equals(columnName)) {
                 System.out.println("index = " + index);
                 h = header;
             }
