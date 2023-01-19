@@ -43,17 +43,24 @@ public class Starter implements CommandLineRunner {
                         .withType(RawCandle.class)
                         .withIgnoreLeadingWhiteSpace(true)
                         .build();
-                Iterator<RawCandle> iterator = csvToBean.iterator();
-                handleIntersectionDate(intersectionIterator)
-                        .accept(intersectionIterator.next());
+                Iterator<RawCandle> firstCsvIterator = csvToBean.iterator();
+                while (intersectionIterator.hasNext()) {
+                    handleIntersectionDate(firstCsvIterator)
+                            .accept(intersectionIterator.next());
+                }
             }
         }
     }
 
-    private Consumer<LocalDateTime> handleIntersectionDate(Iterator<LocalDateTime> iterator) {
+    private Consumer<LocalDateTime> handleIntersectionDate(Iterator<RawCandle> iterator) {
         return intersectionDate -> {
             while (iterator.hasNext()) {
-                System.out.println(iterator.next());
+                RawCandle firstRawCandle = iterator.next();
+                LocalDateTime date = convertToDate(firstRawCandle.getDate(), firstRawCandle.getTime());
+                if (date.equals(intersectionDate)) {
+                    System.out.println("equals " + date);
+                    break;
+                }
             }
         };
     }
@@ -72,15 +79,16 @@ public class Starter implements CommandLineRunner {
     private List<LocalDateTime> readLocalDateTimes(CSVReader reader, int dateColumnIndex, int timeColumnIndex) throws IOException, CsvException {
         return reader.readAll().stream()
                 .map(columns -> new Pair(columns[dateColumnIndex], columns[timeColumnIndex]))
-                .map(pair -> {
-                            LocalDate date = LocalDate.parse(pair.left, DateTimeFormatter.ofPattern("yyyyMMdd"));
-                            long dateMillis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
-                            long timeMillis = Long.parseLong(pair.right);
-                            Instant commonInstant = Instant.ofEpochMilli(dateMillis + timeMillis);
-                            return LocalDateTime.ofInstant(commonInstant, ZoneId.systemDefault());
-                        }
-                )
+                .map(pair -> convertToDate(pair.left, pair.right))
                 .collect(toList());
+    }
+
+    private LocalDateTime convertToDate(String dateString, String timeString) {
+        LocalDate date = LocalDate.parse(dateString, DateTimeFormatter.ofPattern("yyyyMMdd"));
+        long dateMillis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        long timeMillis = Long.parseLong(timeString);
+        Instant commonInstant = Instant.ofEpochMilli(dateMillis + timeMillis);
+        return LocalDateTime.ofInstant(commonInstant, ZoneId.systemDefault());
     }
 
     @SuppressWarnings("unused")
