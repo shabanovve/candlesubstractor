@@ -1,21 +1,29 @@
 package com.example.candlesubstractor;
 
 import com.opencsv.CSVReader;
+import com.opencsv.bean.CsvToBean;
+import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.exceptions.CsvException;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
+@SuppressWarnings({"unused"})
 @Component
 public class Starter implements CommandLineRunner {
     @Override
@@ -27,6 +35,27 @@ public class Starter implements CommandLineRunner {
         System.out.println("first list amount = " + first.size());
         System.out.println("second list amount = " + second.size());
         System.out.println("Intersection amount = " + intersection.size());
+
+        Iterator<LocalDateTime> intersectionIterator = intersection.iterator();
+        try (Reader reader = Files.newBufferedReader(Paths.get(args[0]))) {
+            try (CSVReader csvReader = new CSVReader(reader)) {
+                CsvToBean<RawCandle> csvToBean = new CsvToBeanBuilder<RawCandle>(csvReader)
+                        .withType(RawCandle.class)
+                        .withIgnoreLeadingWhiteSpace(true)
+                        .build();
+                Iterator<RawCandle> iterator = csvToBean.iterator();
+                handleIntersectionDate(intersectionIterator)
+                        .accept(intersectionIterator.next());
+            }
+        }
+    }
+
+    private Consumer<LocalDateTime> handleIntersectionDate(Iterator<LocalDateTime> iterator) {
+        return intersectionDate -> {
+            while (iterator.hasNext()) {
+                System.out.println(iterator.next());
+            }
+        };
     }
 
     private List<LocalDateTime> readDateAndTimeFromFile(String fileName) throws IOException, CsvException {
@@ -54,6 +83,7 @@ public class Starter implements CommandLineRunner {
                 .collect(toList());
     }
 
+    @SuppressWarnings("unused")
     private record Pair(String left, String right) {
     }
 
