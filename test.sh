@@ -1,0 +1,1 @@
+target/candlesubstractor AUDUSD_221001_221231_M5.txt NZDUSD_221001_221231_M5.txt``
