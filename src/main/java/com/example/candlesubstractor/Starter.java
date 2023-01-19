@@ -1,6 +1,8 @@
 package com.example.candlesubstractor;
 
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
+import com.opencsv.bean.ColumnPositionMappingStrategy;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.exceptions.CsvException;
@@ -38,10 +40,18 @@ public class Starter implements CommandLineRunner {
 
         Iterator<LocalDateTime> intersectionIterator = intersection.iterator();
         try (Reader reader = Files.newBufferedReader(Paths.get(args[0]))) {
-            try (CSVReader csvReader = new CSVReader(reader)) {
+            try (
+                    CSVReader csvReader = new CSVReaderBuilder(reader).withSkipLines(1).build()
+            ) {
+                ColumnPositionMappingStrategy<RawCandle> strat = new ColumnPositionMappingStrategy<RawCandle>();
+                strat.setType(RawCandle.class);
+                String[] columns = new String[]{"ticker", "per", "date", "time", "open", "high", "low", "close", "vol"};
+                strat.setColumnMapping(columns);
+
                 CsvToBean<RawCandle> csvToBean = new CsvToBeanBuilder<RawCandle>(csvReader)
                         .withType(RawCandle.class)
                         .withIgnoreLeadingWhiteSpace(true)
+                        .withMappingStrategy(strat)
                         .build();
                 Iterator<RawCandle> firstCsvIterator = csvToBean.iterator();
                 while (intersectionIterator.hasNext()) {
