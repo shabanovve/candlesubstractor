@@ -103,8 +103,23 @@ public class Starter implements CommandLineRunner {
                     firstCandle.close() - secondCandle.close(),
                     firstCandle.vol() - secondCandle.vol()
             );
-            System.out.println("result " + resultCandle);
+            RawCandle resultRawCandle = toRawCandle(secondCandle);
+            System.out.println("result " + resultRawCandle);
         };
+    }
+
+    private RawCandle toRawCandle(Candle candle) {
+        return new RawCandle(
+                candle.ticker(),
+                candle.per(),
+                "",
+                "",
+                candle.open().toString(),
+                candle.high().toString(),
+                candle.low().toString(),
+                candle.close().toString(),
+                candle.vol().toString()
+        );
     }
 
     private List<LocalDateTime> readDateAndTimeFromFile(String fileName) throws IOException {
