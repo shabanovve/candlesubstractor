@@ -84,14 +84,15 @@ public class Starter implements CommandLineRunner {
                 LocalDateTime date = convertToDate(secondRawCandle.date(), secondRawCandle.time());
                 if (intersectionDate.equals(date)) {
                     Candle secondCandle = toCandle(secondRawCandle, intersectionDate);
-                    handleSecondCandle(firstCandle, intersectionDate).accept(secondCandle);
+                    handleSecondCandle(firstCandle, intersectionDate, secondRawCandle.date(), secondRawCandle.time())
+                            .accept(secondCandle);
                     break;
                 }
             }
         };
     }
 
-    private Consumer<Candle> handleSecondCandle(Candle firstCandle, LocalDateTime intersectionDate) {
+    private Consumer<Candle> handleSecondCandle(Candle firstCandle, LocalDateTime intersectionDate, String dateSting, String dateTime) {
         return secondCandle -> {
             Candle resultCandle = new Candle(
                     "result",
@@ -103,17 +104,17 @@ public class Starter implements CommandLineRunner {
                     firstCandle.close() - secondCandle.close(),
                     firstCandle.vol() - secondCandle.vol()
             );
-            RawCandle resultRawCandle = toRawCandle(secondCandle);
+            RawCandle resultRawCandle = toRawCandle(secondCandle, dateSting, dateTime);
             System.out.println("result " + resultRawCandle);
         };
     }
 
-    private RawCandle toRawCandle(Candle candle) {
+    private RawCandle toRawCandle(Candle candle, String dateSting, String dateTime) {
         return new RawCandle(
                 candle.ticker(),
                 candle.per(),
-                "",
-                "",
+                dateSting,
+                dateTime,
                 candle.open().toString(),
                 candle.high().toString(),
                 candle.low().toString(),
