@@ -3,7 +3,9 @@ package com.example.candlesubstractor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
@@ -39,25 +41,27 @@ public class Starter implements CommandLineRunner {
                 Reader firstFileReader = Files.newBufferedReader(Paths.get(args[0]));
                 Scanner firstFileScanner = new Scanner(firstFileReader);
                 Reader secondFileReader = Files.newBufferedReader(Paths.get(args[1]));
-                Scanner secondFileScanner = new Scanner(secondFileReader)
+                Scanner secondFileScanner = new Scanner(secondFileReader);
+                BufferedWriter writer = new BufferedWriter(new FileWriter("result.csv"))
         ) {
-            firstFileScanner.next();//skip headers
+            String header = firstFileScanner.next();//skip headers
+            writer.write(header + "\n");//write header
             secondFileScanner.next();//skip headers
             while (intersectionIterator.hasNext()) {
-                handleIntersectionDate(firstFileScanner, secondFileScanner)
+                handleIntersectionDate(firstFileScanner, secondFileScanner, writer)
                         .accept(intersectionIterator.next());
             }
         }
     }
 
-    private Consumer<LocalDateTime> handleIntersectionDate(Scanner scanner, Scanner secondFileScanner) {
+    private Consumer<LocalDateTime> handleIntersectionDate(Scanner scanner, Scanner secondFileScanner, BufferedWriter writer) {
         return intersectionDate -> {
             while (scanner.hasNext()) {
                 RawCandle firstRawCandle = parseToRawCandle(scanner.next());
                 LocalDateTime date = convertToDate(firstRawCandle.date(), firstRawCandle.time());
                 if (date.equals(intersectionDate)) {
                     Candle firstCandle = toCandle(firstRawCandle, date);
-                    handleFirstCandle(secondFileScanner, intersectionDate).accept(firstCandle);
+                    handleFirstCandle(secondFileScanner, intersectionDate, writer).accept(firstCandle);
                     break;
                 }
             }
@@ -77,14 +81,14 @@ public class Starter implements CommandLineRunner {
         );
     }
 
-    private Consumer<Candle> handleFirstCandle(Scanner secondFileScanner, LocalDateTime intersectionDate) {
+    private Consumer<Candle> handleFirstCandle(Scanner secondFileScanner, LocalDateTime intersectionDate, BufferedWriter writer) {
         return firstCandle -> {
             while (secondFileScanner.hasNext()) {
                 RawCandle secondRawCandle = parseToRawCandle(secondFileScanner.next());
                 LocalDateTime date = convertToDate(secondRawCandle.date(), secondRawCandle.time());
                 if (intersectionDate.equals(date)) {
                     Candle secondCandle = toCandle(secondRawCandle, intersectionDate);
-                    handleSecondCandle(firstCandle, intersectionDate, secondRawCandle.date(), secondRawCandle.time())
+                    handleSecondCandle(firstCandle, intersectionDate, secondRawCandle.date(), secondRawCandle.time(), writer)
                             .accept(secondCandle);
                     break;
                 }
@@ -92,7 +96,9 @@ public class Starter implements CommandLineRunner {
         };
     }
 
-    private Consumer<Candle> handleSecondCandle(Candle firstCandle, LocalDateTime intersectionDate, String dateSting, String dateTime) {
+    private Consumer<Candle> handleSecondCandle(
+            Candle firstCandle, LocalDateTime intersectionDate, String dateSting, String dateTime, BufferedWriter writer
+    ) {
         return secondCandle -> {
             Candle resultCandle = new Candle(
                     "result",
@@ -105,13 +111,30 @@ public class Starter implements CommandLineRunner {
                     firstCandle.vol() - secondCandle.vol()
             );
             RawCandle resultRawCandle = toRawCandle(secondCandle, dateSting, dateTime);
-            System.out.println("result " + resultRawCandle);
+            try {
+                writer.write(toRawString(resultRawCandle));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         };
+    }
+
+    private String toRawString(RawCandle rawCandle) {
+        //<TICKER>,<PER>,<DATE>,<TIME>,<OPEN>,<HIGH>,<LOW>,<CLOSE>,<VOL>
+        return rawCandle.ticker() + "," +
+                rawCandle.per() + "," +
+                rawCandle.date() + "," +
+                rawCandle.time() + "," +
+                rawCandle.open() + "," +
+                rawCandle.high() + "," +
+                rawCandle.low() + "," +
+                rawCandle.close() + "," +
+                rawCandle.vol() + "\n";
     }
 
     private RawCandle toRawCandle(Candle candle, String dateSting, String dateTime) {
         return new RawCandle(
-                candle.ticker(),
+                "RESULT",
                 candle.per(),
                 dateSting,
                 dateTime,
