@@ -54,7 +54,17 @@ public class Starter implements CommandLineRunner {
                 RawCandle firstRawCandle = parseToRawCandle(scanner.next());
                 LocalDateTime date = convertToDate(firstRawCandle.date(), firstRawCandle.time());
                 if (date.equals(intersectionDate)) {
-                    System.out.println("equals " + date);
+                    Candle candle = new Candle(
+                            firstRawCandle.ticker(),
+                            firstRawCandle.per(),
+                            date,
+                            Float.valueOf(firstRawCandle.open()),
+                            Float.valueOf(firstRawCandle.high()),
+                            Float.valueOf(firstRawCandle.low()),
+                            Float.valueOf(firstRawCandle.close()),
+                            Float.valueOf(firstRawCandle.vol())
+                            );
+                    System.out.println("equals " + candle);
                     break;
                 }
             }
