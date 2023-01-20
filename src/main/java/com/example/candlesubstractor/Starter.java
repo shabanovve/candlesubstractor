@@ -38,7 +38,7 @@ public class Starter implements CommandLineRunner {
         try (
                 Reader firstFileReader = Files.newBufferedReader(Paths.get(args[0]));
                 Scanner firstFileScanner = new Scanner(firstFileReader);
-                Reader secondFileReader = Files.newBufferedReader(Paths.get(args[0]));
+                Reader secondFileReader = Files.newBufferedReader(Paths.get(args[1]));
                 Scanner secondFileScanner = new Scanner(secondFileReader)
         ) {
             firstFileScanner.next();//skip headers
@@ -78,16 +78,32 @@ public class Starter implements CommandLineRunner {
     }
 
     private Consumer<Candle> handleFirstCandle(Scanner secondFileScanner, LocalDateTime intersectionDate) {
-        return candle -> {
+        return firstCandle -> {
             while (secondFileScanner.hasNext()) {
                 RawCandle secondRawCandle = parseToRawCandle(secondFileScanner.next());
                 LocalDateTime date = convertToDate(secondRawCandle.date(), secondRawCandle.time());
                 if (intersectionDate.equals(date)) {
                     Candle secondCandle = toCandle(secondRawCandle, intersectionDate);
-                    System.out.println("equals " + secondCandle);
+                    handleSecondCandle(firstCandle, intersectionDate).accept(secondCandle);
                     break;
                 }
             }
+        };
+    }
+
+    private Consumer<Candle> handleSecondCandle(Candle firstCandle, LocalDateTime intersectionDate) {
+        return secondCandle -> {
+            Candle resultCandle = new Candle(
+                    "result",
+                    firstCandle.per(),
+                    intersectionDate,
+                    firstCandle.open() - secondCandle.open(),
+                    firstCandle.high() - secondCandle.high(),
+                    firstCandle.low() - secondCandle.low(),
+                    firstCandle.close() - secondCandle.close(),
+                    firstCandle.vol() - secondCandle.vol()
+            );
+            System.out.println("result " + resultCandle);
         };
     }
 
