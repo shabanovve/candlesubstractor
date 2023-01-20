@@ -56,27 +56,38 @@ public class Starter implements CommandLineRunner {
                 RawCandle firstRawCandle = parseToRawCandle(scanner.next());
                 LocalDateTime date = convertToDate(firstRawCandle.date(), firstRawCandle.time());
                 if (date.equals(intersectionDate)) {
-                    Candle firstCandle = new Candle(
-                            firstRawCandle.ticker(),
-                            firstRawCandle.per(),
-                            date,
-                            Float.valueOf(firstRawCandle.open()),
-                            Float.valueOf(firstRawCandle.high()),
-                            Float.valueOf(firstRawCandle.low()),
-                            Float.valueOf(firstRawCandle.close()),
-                            Float.valueOf(firstRawCandle.vol())
-                    );
-                    System.out.println("equals " + firstCandle);
-                    handleFirstCandle(secondFileScanner).accept(firstCandle);
+                    Candle firstCandle = toCandle(firstRawCandle, date);
+                    handleFirstCandle(secondFileScanner, intersectionDate).accept(firstCandle);
                     break;
                 }
             }
         };
     }
 
-    private Consumer<Candle> handleFirstCandle(Scanner secondFileScanner) {
+    private Candle toCandle(RawCandle rawCandle, LocalDateTime date) {
+        return new Candle(
+                rawCandle.ticker(),
+                rawCandle.per(),
+                date,
+                Float.valueOf(rawCandle.open()),
+                Float.valueOf(rawCandle.high()),
+                Float.valueOf(rawCandle.low()),
+                Float.valueOf(rawCandle.close()),
+                Float.valueOf(rawCandle.vol())
+        );
+    }
+
+    private Consumer<Candle> handleFirstCandle(Scanner secondFileScanner, LocalDateTime intersectionDate) {
         return candle -> {
-            return;
+            while (secondFileScanner.hasNext()) {
+                RawCandle secondRawCandle = parseToRawCandle(secondFileScanner.next());
+                LocalDateTime date = convertToDate(secondRawCandle.date(), secondRawCandle.time());
+                if (intersectionDate.equals(date)) {
+                    Candle secondCandle = toCandle(secondRawCandle, intersectionDate);
+                    System.out.println("equals " + secondCandle);
+                    break;
+                }
+            }
         };
     }
 
