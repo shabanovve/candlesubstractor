@@ -1,11 +1,5 @@
 package com.example.candlesubstractor;
 
-import com.opencsv.CSVReader;
-import com.opencsv.CSVReaderBuilder;
-import com.opencsv.bean.ColumnPositionMappingStrategy;
-import com.opencsv.bean.CsvToBean;
-import com.opencsv.bean.CsvToBeanBuilder;
-import com.opencsv.exceptions.CsvException;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -19,11 +13,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Scanner;
 import java.util.function.Consumer;
 
-import static java.util.stream.Collectors.toList;
+import static com.example.candlesubstractor.Parser.parseToRawCandle;
 
 @SuppressWarnings({"unused"})
 @Component
@@ -41,32 +37,22 @@ public class Starter implements CommandLineRunner {
         Iterator<LocalDateTime> intersectionIterator = intersection.iterator();
         try (Reader reader = Files.newBufferedReader(Paths.get(args[0]))) {
             try (
-                    CSVReader csvReader = new CSVReaderBuilder(reader).withSkipLines(1).build()
+                    Scanner scanner = new Scanner(reader)
             ) {
-                ColumnPositionMappingStrategy<RawCandle> strat = new ColumnPositionMappingStrategy<RawCandle>();
-                strat.setType(RawCandle.class);
-                String[] columns = new String[]{"ticker", "per", "date", "time", "open", "high", "low", "close", "vol"};
-                strat.setColumnMapping(columns);
-
-                CsvToBean<RawCandle> csvToBean = new CsvToBeanBuilder<RawCandle>(csvReader)
-                        .withType(RawCandle.class)
-                        .withIgnoreLeadingWhiteSpace(true)
-                        .withMappingStrategy(strat)
-                        .build();
-                Iterator<RawCandle> firstCsvIterator = csvToBean.iterator();
+                scanner.next();//skip headers
                 while (intersectionIterator.hasNext()) {
-                    handleIntersectionDate(firstCsvIterator)
+                    handleIntersectionDate(scanner)
                             .accept(intersectionIterator.next());
                 }
             }
         }
     }
 
-    private Consumer<LocalDateTime> handleIntersectionDate(Iterator<RawCandle> iterator) {
+    private Consumer<LocalDateTime> handleIntersectionDate(Scanner scanner) {
         return intersectionDate -> {
-            while (iterator.hasNext()) {
-                RawCandle firstRawCandle = iterator.next();
-                LocalDateTime date = convertToDate(firstRawCandle.getDate(), firstRawCandle.getTime());
+            while (scanner.hasNext()) {
+                RawCandle firstRawCandle = parseToRawCandle(scanner.next());
+                LocalDateTime date = convertToDate(firstRawCandle.date(), firstRawCandle.time());
                 if (date.equals(intersectionDate)) {
                     System.out.println("equals " + date);
                     break;
@@ -75,22 +61,24 @@ public class Starter implements CommandLineRunner {
         };
     }
 
-    private List<LocalDateTime> readDateAndTimeFromFile(String fileName) throws IOException, CsvException {
+    private List<LocalDateTime> readDateAndTimeFromFile(String fileName) throws IOException {
         List<LocalDateTime> dates;
-        try (CSVReader reader = new CSVReader(new FileReader(fileName))) {
-            String[] headers = reader.readNext();
+        try (Scanner scanner = new Scanner(new FileReader(fileName))) {
+            String[] headers = Parser.parseCells(scanner.next());
             int dateColumnIndex = getColumnIndex(headers, "<DATE>");
             int timeColumnIndex = getColumnIndex(headers, "<TIME>");
-            dates = readLocalDateTimes(reader, dateColumnIndex, timeColumnIndex);
+            dates = readLocalDateTimes(scanner, dateColumnIndex, timeColumnIndex);
         }
         return dates;
     }
 
-    private List<LocalDateTime> readLocalDateTimes(CSVReader reader, int dateColumnIndex, int timeColumnIndex) throws IOException, CsvException {
-        return reader.readAll().stream()
-                .map(columns -> new Pair(columns[dateColumnIndex], columns[timeColumnIndex]))
-                .map(pair -> convertToDate(pair.left, pair.right))
-                .collect(toList());
+    private List<LocalDateTime> readLocalDateTimes(Scanner scanner, int dateColumnIndex, int timeColumnIndex) {
+        List<LocalDateTime> dateTimeList = new ArrayList<>();
+        while (scanner.hasNext()) {
+            RawCandle rawCandle = parseToRawCandle(scanner.next());
+            dateTimeList.add(convertToDate(rawCandle.date(), rawCandle.time()));
+        }
+        return dateTimeList;
     }
 
     private LocalDateTime convertToDate(String dateString, String timeString) {
