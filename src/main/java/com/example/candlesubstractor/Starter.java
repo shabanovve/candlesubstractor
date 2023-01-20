@@ -35,26 +35,28 @@ public class Starter implements CommandLineRunner {
         System.out.println("Intersection amount = " + intersection.size());
 
         Iterator<LocalDateTime> intersectionIterator = intersection.iterator();
-        try (Reader reader = Files.newBufferedReader(Paths.get(args[0]))) {
-            try (
-                    Scanner scanner = new Scanner(reader)
-            ) {
-                scanner.next();//skip headers
-                while (intersectionIterator.hasNext()) {
-                    handleIntersectionDate(scanner)
-                            .accept(intersectionIterator.next());
-                }
+        try (
+                Reader firstFileReader = Files.newBufferedReader(Paths.get(args[0]));
+                Scanner firstFileScanner = new Scanner(firstFileReader);
+                Reader secondFileReader = Files.newBufferedReader(Paths.get(args[0]));
+                Scanner secondFileScanner = new Scanner(secondFileReader)
+        ) {
+            firstFileScanner.next();//skip headers
+            secondFileScanner.next();//skip headers
+            while (intersectionIterator.hasNext()) {
+                handleIntersectionDate(firstFileScanner, secondFileScanner)
+                        .accept(intersectionIterator.next());
             }
         }
     }
 
-    private Consumer<LocalDateTime> handleIntersectionDate(Scanner scanner) {
+    private Consumer<LocalDateTime> handleIntersectionDate(Scanner scanner, Scanner secondFileScanner) {
         return intersectionDate -> {
             while (scanner.hasNext()) {
                 RawCandle firstRawCandle = parseToRawCandle(scanner.next());
                 LocalDateTime date = convertToDate(firstRawCandle.date(), firstRawCandle.time());
                 if (date.equals(intersectionDate)) {
-                    Candle candle = new Candle(
+                    Candle firstCandle = new Candle(
                             firstRawCandle.ticker(),
                             firstRawCandle.per(),
                             date,
@@ -63,11 +65,18 @@ public class Starter implements CommandLineRunner {
                             Float.valueOf(firstRawCandle.low()),
                             Float.valueOf(firstRawCandle.close()),
                             Float.valueOf(firstRawCandle.vol())
-                            );
-                    System.out.println("equals " + candle);
+                    );
+                    System.out.println("equals " + firstCandle);
+                    handleFirstCandle(secondFileScanner).accept(firstCandle);
                     break;
                 }
             }
+        };
+    }
+
+    private Consumer<Candle> handleFirstCandle(Scanner secondFileScanner) {
+        return candle -> {
+            return;
         };
     }
 
