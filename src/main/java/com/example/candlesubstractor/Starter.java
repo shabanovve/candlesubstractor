@@ -110,7 +110,7 @@ public class Starter implements CommandLineRunner {
                     firstCandle.close() - secondCandle.close(),
                     firstCandle.vol() - secondCandle.vol()
             );
-            RawCandle resultRawCandle = toRawCandle(secondCandle, dateSting, dateTime);
+            RawCandle resultRawCandle = toRawCandle(resultCandle, dateSting, dateTime);
             try {
                 writer.write(toRawString(resultRawCandle));
             } catch (IOException e) {
