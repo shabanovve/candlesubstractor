@@ -42,7 +42,7 @@ public class Starter implements CommandLineRunner {
                 Scanner firstFileScanner = new Scanner(firstFileReader);
                 Reader secondFileReader = Files.newBufferedReader(Paths.get(args[1]));
                 Scanner secondFileScanner = new Scanner(secondFileReader);
-                BufferedWriter writer = new BufferedWriter(new FileWriter("result.csv"))
+                BufferedWriter writer = new BufferedWriter(new FileWriter("result.txt"))
         ) {
             String header = firstFileScanner.next();//skip headers
             writer.write(header + "\n");//write header
