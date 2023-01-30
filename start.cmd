@@ -1,0 +1,1 @@
+candelsubstractor.exe ETHUSDT_5.txt 0.3125 DOGEUSDT_5.txt 6250
