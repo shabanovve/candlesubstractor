@@ -26,10 +26,18 @@ import static com.example.candlesubstractor.Parser.parseToRawCandle;
 @SuppressWarnings({"unused"})
 @Component
 public class Starter implements CommandLineRunner {
+    private String fileName1;
+    private String fileName2;
+    private Float coefficient1;
+    private Float coefficient2;
+
     @Override
     public void run(String... args) throws Exception {
-        List<LocalDateTime> first = readDateAndTimeFromFile(args[0]);
-        List<LocalDateTime> second = readDateAndTimeFromFile(args[1]);
+        System.out.println("Use this tool in such format:");
+        System.out.println("candelsubstractor <file_name1> coefficient1 <file_name2> <coefficient2>");
+        init(args);
+        List<LocalDateTime> first = readDateAndTimeFromFile(fileName1);
+        List<LocalDateTime> second = readDateAndTimeFromFile(fileName2);
         List<LocalDateTime> intersection = first.stream()
                 .distinct().filter(second::contains).toList();
         System.out.println("first list amount = " + first.size());
@@ -38,9 +46,9 @@ public class Starter implements CommandLineRunner {
 
         Iterator<LocalDateTime> intersectionIterator = intersection.iterator();
         try (
-                Reader firstFileReader = Files.newBufferedReader(Paths.get(args[0]));
+                Reader firstFileReader = Files.newBufferedReader(Paths.get(fileName1));
                 Scanner firstFileScanner = new Scanner(firstFileReader);
-                Reader secondFileReader = Files.newBufferedReader(Paths.get(args[1]));
+                Reader secondFileReader = Files.newBufferedReader(Paths.get(fileName2));
                 Scanner secondFileScanner = new Scanner(secondFileReader);
                 BufferedWriter writer = new BufferedWriter(new FileWriter("result.txt"))
         ) {
@@ -52,6 +60,13 @@ public class Starter implements CommandLineRunner {
                         .accept(intersectionIterator.next());
             }
         }
+    }
+
+    private void init(String[] args) {
+        fileName1 = args[0];
+        coefficient1 = Float.parseFloat(args[1]);
+        fileName2 = args[2];
+        coefficient2 = Float.parseFloat(args[3]);
     }
 
     private Consumer<LocalDateTime> handleIntersectionDate(Scanner scanner, Scanner secondFileScanner, BufferedWriter writer) {
@@ -104,10 +119,10 @@ public class Starter implements CommandLineRunner {
                     "result",
                     firstCandle.per(),
                     intersectionDate,
-                    firstCandle.open() - secondCandle.open(),
-                    firstCandle.high() - secondCandle.high(),
-                    firstCandle.low() - secondCandle.low(),
-                    firstCandle.close() - secondCandle.close(),
+                    firstCandle.open() * coefficient1 - secondCandle.open() * coefficient2,
+                    firstCandle.high() * coefficient1 - secondCandle.high() * coefficient2,
+                    firstCandle.low() * coefficient1 - secondCandle.low() * coefficient2,
+                    firstCandle.close() * coefficient1 - secondCandle.close() * coefficient2,
                     firstCandle.vol() - secondCandle.vol()
             );
             RawCandle resultRawCandle = toRawCandle(resultCandle, dateSting, dateTime);
